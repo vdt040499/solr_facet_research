@@ -1,0 +1,18 @@
+{"topic_10236681":{
+    "pullReplicas":"0",
+    "configName":"topic_v3",
+    "replicationFactor":1,
+    "router":{"name":"compositeId"},
+    "nrtReplicas":1,
+    "tlogReplicas":"0",
+    "shards":{"shard1":{
+        "range":"80000000-7fffffff",
+        "state":"active",
+        "replicas":{"core_node2":{
+            "core":"topic_10236681_shard1_replica_n1",
+            "node_name":"solr9-testing3:8985_solr",
+            "type":"NRT",
+            "state":"active",
+            "leader":"true",
+            "force_set_state":"false",
+            "base_url":"http://solr9-testing3:8985/solr"}}}}}}

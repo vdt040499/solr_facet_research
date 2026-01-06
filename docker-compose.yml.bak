@@ -1,0 +1,27 @@
+services:
+  solr:
+    image: solr:9
+    container_name: solr_local
+    ports:
+      - "8983:8983"
+    volumes:
+      # 1. Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
+      - solr_data:/var/solr
+
+      # 2. Quan trọng: Mount folder config (đã sửa schema) vào thư mục ConfigSets
+      # Mount toàn bộ wordcloud_config (bao gồm thư mục conf bên trong) để script solr-precreate có thể tìm thấy
+      - ./wordcloud_config:/opt/solr/server/solr/configsets/wordcloud_config
+
+      # 3. Mount plugin jars cho Vietnamese Analyzer
+      # Plugin jars cần được đặt trong thư mục lib/ trước khi khởi động container
+      # Với Solr 8.5.2, đường dẫn mặc định là /opt/solr/server/lib
+      # - ./lib:/opt/solr/server/lib
+
+    # 3. Lệnh tạo core tự động khi khởi động
+    # Cú pháp: solr-precreate <tên_core_muốn_tạo> <đường_dẫn_tuyệt_đối_đến_configset>
+    command: solr-precreate my_core /opt/solr/server/solr/configsets/wordcloud_config
+    
+    restart: always
+
+volumes:
+  solr_data:
