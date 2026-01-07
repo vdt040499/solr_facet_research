@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Data files (cho phép exported_data_no_version.json để đóng gói vào image)
+exported_data.json
+exported_data.jsonl
+export_state.json
+demo_data*.json
+
+# Scripts (cho phép docker-entrypoint.sh để chạy trong container)
+*.py
+*.md
+
+# Backup data
+topic_10236681/
+*.bak
+
+# Build artifacts
+solr-vn-tokenizer/target/
+solr-vn-tokenizer/.mvn/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+

@@ -10,7 +10,7 @@ services:
 
       # 2. Quan trọng: Mount folder config (đã sửa schema) vào thư mục ConfigSets
       # Mount toàn bộ wordcloud_config (bao gồm thư mục conf bên trong) để script solr-precreate có thể tìm thấy
-      - ./wordcloud_config:/opt/solr/server/solr/configsets/wordcloud_config
+      - ./wordcloud_config_test:/opt/solr/server/solr/configsets/wordcloud_config
       # - ./configsets/topic_v3_restored:/opt/solr/server/solr/configsets/topic_v3_restored
       # Mount backup folder để restore
       - ./topic_10236681:/opt/solr/backups/topic_10236681

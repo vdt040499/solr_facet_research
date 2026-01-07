@@ -1,3 +1,6 @@
 solr-vn-tokenizer
 lib
-configsets
+configsets/
+topic_10236681/
+*.json
+*.jsonl

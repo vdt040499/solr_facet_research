@@ -24,7 +24,7 @@
     <field name="likes"                 type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
     <field name="comments"              type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
     <field name="shares"                type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
-    <field name="haha"                  type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
+   <field name="haha"                   type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
     <field name="sad"                   type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
     <field name="angry"                 type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
     <field name="wow"                   type="int"       docValues="true" indexed="false" stored="true" multiValued="false" />
@@ -72,29 +72,16 @@
     <field name="_version_"             type="long"      indexed="true" stored="true" multiValued="false"/>
     <dynamicField name="random_*"       type="random"    indexed="true" />
     <field name="language"              type="int"       docValues="false" indexed="true" stored="true" multiValued="false" />
-
-    <!-- Field mới dành riêng cho word cloud: chỉ chứa cụm 2-3 từ từ search_text -->
-    <!-- 
-      Tối ưu cho faceting:
-      - KHÔNG dùng docValues với TextField (không hiệu quả với analyzed fields)
-      - multiValued="true" để hỗ trợ nhiều cụm từ
-      - stored="false" để tiết kiệm disk space (chỉ dùng cho faceting, không cần retrieve)
-    -->
     <field name="search_text_cloud" 
-           type="text_cloud" 
-           indexed="true" 
-           stored="false" 
-           multiValued="true"/>
+          type="text_cloud" 
+          indexed="true" 
+          stored="false" 
+          multiValued="true"/>
   </fields>
-
   <uniqueKey>id</uniqueKey>
-
-  <!-- Các copyField hiện có -->
-  <copyField source="search_text" dest="search_text_exactly"/>
-  <copyField source="effect" dest="effect_exactly"/>
-  <copyField source="sound" dest="sound_exactly"/>
-
-  <!-- CopyField mới: tự động copy từ search_text sang search_text_cloud khi add/update -->
+  <copyField name="search_text_exactly" source="search_text" dest="search_text_exactly"  />
+  <copyField name="effect_exactly" source="effect" dest="effect_exactly"  />
+  <copyField name="sound_exactly" source="sound" dest="sound_exactly"  />
   <copyField source="search_text" dest="search_text_cloud"/>
 
   <types>
@@ -147,7 +134,6 @@
         <filter class="solr.ASCIIFoldingFilterFactory"/>
       </analyzer>
     </fieldType>
-
     <fieldType name="text_vi_exactly" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <charFilter class="solr.HTMLStripCharFilterFactory"/>
@@ -166,7 +152,7 @@
         />
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
-      <analyzer type="query">
+      <analyzer type="query" >
         <charFilter class="solr.HTMLStripCharFilterFactory"/>
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
         <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt" />
@@ -186,16 +172,6 @@
         <filter class="solr.LowerCaseFilterFactory"/>
       </analyzer>
     </fieldType>
-
-    <!-- FieldType mới cho word cloud: tạo cụm từ 2-5 từ -->
-    <!-- 
-      Tối ưu:
-      - Loại bỏ dấu phẩy và ký tự đặc biệt trước khi tokenize
-      - Không dùng WordDelimiterGraphFilterFactory để tránh tạo tokens có dấu phẩy
-      - Loại bỏ tokens có chứa ký tự đặc biệt
-      - Chỉ giữ các cụm từ có ý nghĩa (2-4 từ, độ dài tối thiểu 4 ký tự)
-      - Tăng minLength để loại bỏ cụm từ quá ngắn
-    -->
     <fieldType name="text_cloud" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <charFilter class="solr.HTMLStripCharFilterFactory"/>
@@ -273,21 +249,6 @@
         <filter class="solr.LengthFilterFactory" min="2" max="50"/>
       </analyzer>
     </fieldType>
-
-
-    <!-- FieldType text_vn sử dụng VietnameseAnalyzer từ solr-vn-tokenizer plugin -->
-    <!-- 
-      VietnameseAnalyzer phân tích văn bản tiếng Việt chính xác hơn so với WhitespaceTokenizer
-      Sử dụng VnCoreNLP để tokenize và loại bỏ stop words tiếng Việt
-      
-      LƯU Ý: Tạm thời comment để tránh lỗi ClassCastException
-      Cần kiểm tra lại VietnameseAnalyzer có implement đúng interface không
-    -->
-    <!-- <fieldType name="text_cloud_vn" class="solr.TextField" positionIncrementGap="100">
-      <analyzer type="index" class="org.apache.lucene.analysis.vi.VietnameseAnalyzer"/>
-      <analyzer type="query" class="org.apache.lucene.analysis.vi.VietnameseAnalyzer"/>
-    </fieldType> -->
-
     <fieldType name="random" class="solr.RandomSortField" indexed="true" />
   </types>
 </schema>
