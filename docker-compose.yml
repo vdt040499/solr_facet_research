@@ -1,30 +1,50 @@
 services:
-  solr:
-    image: solr:latest
-    container_name: solr_local
+  # Solr 8.5.2 với config từ wordcloud_config_test
+  solr_8:
+    image: solr:8.5.2
+    container_name: solr_8_5_2
     ports:
       - "8983:8983"
     volumes:
-      # 1. Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
-      - solr_data:/var/solr
+      # Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
+      - solr_data_8:/var/solr
 
-      # 2. Quan trọng: Mount folder config (đã sửa schema) vào thư mục ConfigSets
-      # Mount toàn bộ wordcloud_config (bao gồm thư mục conf bên trong) để script solr-precreate có thể tìm thấy
+      # Mount folder config vào thư mục ConfigSets
       - ./wordcloud_config_test:/opt/solr/server/solr/configsets/wordcloud_config
-      # - ./configsets/topic_v3_restored:/opt/solr/server/solr/configsets/topic_v3_restored
-      # Mount backup folder để restore
-      - ./topic_10236681:/opt/solr/backups/topic_10236681
 
-      # 3. Mount plugin jars cho Vietnamese Analyzer
-      # Plugin jars cần được đặt trong thư mục lib/ trước khi khởi động container
-      # Với Solr 8.5.2, đường dẫn mặc định là /opt/solr/server/lib
-      # - ./lib:/opt/solr/server/lib
-
-    # 3. Lệnh tạo core tự động khi khởi động
-    # Cú pháp: solr-precreate <tên_core_muốn_tạo> <đường_dẫn_tuyệt_đối_đến_configset>
-    command: solr-precreate my_core /opt/solr/server/solr/configsets/wordcloud_config
+    # Lệnh tạo core tự động khi khởi động
+    command: solr-precreate topic_tanvd /opt/solr/server/solr/configsets/wordcloud_config
     
     restart: always
+    networks:
+      - solr_network
+
+  # Solr latest (9.11) với config từ wordcloud_config_solr_9.11_bk
+  solr_9:
+    image: solr:latest
+    container_name: solr_9_11
+    ports:
+      - "8984:8983"
+    volumes:
+      # Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
+      - solr_data_9:/var/solr
+
+      # Mount folder config vào thư mục ConfigSets
+      # Sử dụng tên wordcloud_config để match với đường dẫn lib trong solrconfig.xml
+      - ./wordcloud_config_solr_9.11_bk:/opt/solr/server/solr/configsets/wordcloud_config
+
+    # Lệnh tạo core tự động khi khởi động
+    # Thay đổi tên core cho Solr 9 để tránh conflict
+    command: solr-precreate topic_tanvd_9 /opt/solr/server/solr/configsets/wordcloud_config
+    
+    restart: always
+    networks:
+      - solr_network
 
 volumes:
-  solr_data:
+  solr_data_8:
+  solr_data_9:
+
+networks:
+  solr_network:
+    driver: bridge
