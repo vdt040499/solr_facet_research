@@ -176,77 +176,146 @@
       <analyzer type="index">
         <charFilter class="solr.HTMLStripCharFilterFactory"/>
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <!-- Dùng file stopwords tiếng Việt riêng để loại từ dừng tốt hơn -->
+        <!-- Loại bỏ stopwords -->
         <filter class="solr.StopFilterFactory" 
                 ignoreCase="true" 
                 words="stopwords.txt"/>
-        <!-- Loại bỏ empty strings TRƯỚC: thay empty string bằng giá trị 1 ký tự sẽ bị loại bỏ bởi LengthFilter -->
+        <!-- Loại bỏ các tokens chỉ chứa dấu câu và ký tự đặc biệt (không có chữ cái hoặc số) -->
         <filter class="solr.PatternReplaceFilterFactory"
-                pattern="^$"
-                replacement="X"/>
-        <!-- Loại bỏ các tokens có chứa dấu phẩy hoặc dấu gạch dưới -->
-        <filter class="solr.PatternReplaceFilterFactory"
-                pattern=".*[,;_].*"
+                pattern="^[,.;:!?_-]+$"
                 replacement=""/>
+        <!-- Chuyển về chữ thường -->
         <filter class="solr.LowerCaseFilterFactory"/>
-        <!-- KHÔNG dùng ASCIIFoldingFilterFactory để giữ nguyên dấu tiếng Việt -->
-        <!-- Loại bỏ các tokens quá ngắn (ít hơn 2 ký tự) - sẽ loại bỏ token "x" từ empty string -->
+        <!-- Loại bỏ khoảng trắng ở đầu token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^\s+"
+                replacement=""/>
+        <!-- Loại bỏ khoảng trắng ở cuối token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="\s+$"
+                replacement=""/>
+        <!-- Loại bỏ dấu câu ở đầu token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^[,.;:!?_-]+"
+                replacement=""/>
+        <!-- Loại bỏ dấu câu ở cuối token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="[,.;:!?_-]+$"
+                replacement=""/>
+        <!-- Loại bỏ các tokens có dấu câu ở giữa (bất kỳ đâu) - CHỈ dấu câu, KHÔNG bao gồm khoảng trắng -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern=".*[,.;:!?_-].*"
+                replacement=""/>
+        <!-- Loại bỏ các tokens quá ngắn (ít hơn 3 ký tự) hoặc quá dài -->
         <filter class="solr.LengthFilterFactory" min="2" max="50"/>
-        
-        <!-- Tạo shingles (cụm từ) từ 2 đến 4 từ, KHÔNG tạo từ đơn -->
+        <!-- Tạo shingles (cụm từ) từ 2 đến 4 từ, VÀ lấy cả từ đơn -->
         <filter class="solr.ShingleFilterFactory"
                 minShingleSize="2"
                 maxShingleSize="4"
-                outputUnigrams="false"
+                outputUnigrams="true"
                 tokenSeparator=" "/>
-        
-        <!-- Loại bỏ các cụm từ quá ngắn (ít hơn 4 ký tự) hoặc quá dài -->
-        <filter class="solr.LengthFilterFactory" min="4" max="50"/>
-        <!-- Loại bỏ các cụm từ có chứa dấu phẩy hoặc dấu gạch dưới -->
+        <!-- Loại bỏ dấu câu ở đầu cụm từ -->
         <filter class="solr.PatternReplaceFilterFactory"
-                pattern=".*[,;_].*"
+                pattern="^[,.;:!?_-]+"
                 replacement=""/>
-        <!-- Loại bỏ empty strings sau PatternReplaceFilter: thay bằng giá trị 1 ký tự -->
+        <!-- Loại bỏ dấu câu ở cuối cụm từ -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="[,.;:!?_-]+$"
+                replacement=""/>
+        <!-- Loại bỏ các cụm từ có dấu câu ở giữa (bất kỳ đâu) - CHỈ dấu câu, KHÔNG bao gồm khoảng trắng -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern=".*[,.;:!?_-].*"
+                replacement=""/>
+        <!-- Loại bỏ các cụm từ quá ngắn (ít hơn 3 ký tự) hoặc quá dài -->
+        <filter class="solr.LengthFilterFactory" min="2" max="50"/>
+        <!-- Loại bỏ các cụm từ chỉ chứa dấu câu -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^[,.;:!?_-]+$"
+                replacement=""/>
+        <!-- Loại bỏ khoảng trắng ở đầu token (cuối cùng) -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^\s+"
+                replacement=""/>
+        <!-- Loại bỏ khoảng trắng ở cuối token (cuối cùng) -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="\s+$"
+                replacement=""/>
+        <!-- Loại bỏ empty strings -->
         <filter class="solr.PatternReplaceFilterFactory"
                 pattern="^$"
-                replacement="X"/>
-        <!-- LengthFilter sẽ loại bỏ token "x" (1 ký tự) -->
-        <filter class="solr.LengthFilterFactory" min="2" max="50"/>
+                replacement=""/>
       </analyzer>
       <analyzer type="query">
-        <!-- Query analyzer đơn giản hơn để tăng tốc faceting -->
         <charFilter class="solr.HTMLStripCharFilterFactory"/>
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+        <!-- Loại bỏ stopwords -->
         <filter class="solr.StopFilterFactory" 
                 ignoreCase="true" 
                 words="stopwords.txt"/>
-        <!-- Loại bỏ empty strings TRƯỚC -->
+        <!-- Loại bỏ các tokens chỉ chứa dấu câu và ký tự đặc biệt (không có chữ cái hoặc số) -->
         <filter class="solr.PatternReplaceFilterFactory"
-                pattern="^$"
-                replacement="X"/>
-        <filter class="solr.PatternReplaceFilterFactory"
-                pattern=".*[,;_].*"
+                pattern="^[,.;:!?_-]+$"
                 replacement=""/>
+        <!-- Chuyển về chữ thường -->
         <filter class="solr.LowerCaseFilterFactory"/>
-        <!-- KHÔNG dùng ASCIIFoldingFilterFactory để giữ nguyên dấu tiếng Việt -->
-        <!-- LengthFilter sẽ loại bỏ token "x" (1 ký tự) từ empty string -->
+        <!-- Loại bỏ khoảng trắng ở đầu token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^\s+"
+                replacement=""/>
+        <!-- Loại bỏ khoảng trắng ở cuối token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="\s+$"
+                replacement=""/>
+        <!-- Loại bỏ dấu câu ở đầu token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^[,.;:!?_-]+"
+                replacement=""/>
+        <!-- Loại bỏ dấu câu ở cuối token -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="[,.;:!?_-]+$"
+                replacement=""/>
+        <!-- Loại bỏ các tokens có dấu câu ở giữa (bất kỳ đâu) - CHỈ dấu câu, KHÔNG bao gồm khoảng trắng -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern=".*[,.;:!?_-].*"
+                replacement=""/>
+        <!-- Loại bỏ các tokens quá ngắn (ít hơn 3 ký tự) hoặc quá dài -->
         <filter class="solr.LengthFilterFactory" min="2" max="50"/>
-        <!-- Tạo shingles từ query để match với index -->
+        <!-- Tạo shingles (cụm từ) từ 2 đến 4 từ, VÀ lấy cả từ đơn -->
         <filter class="solr.ShingleFilterFactory"
                 minShingleSize="2"
                 maxShingleSize="4"
-                outputUnigrams="false"
+                outputUnigrams="true"
                 tokenSeparator=" "/>
-        <filter class="solr.LengthFilterFactory" min="4" max="50"/>
+        <!-- Loại bỏ dấu câu ở đầu cụm từ -->
         <filter class="solr.PatternReplaceFilterFactory"
-                pattern=".*[,;:!?;_].*"
+                pattern="^[,.;:!?_-]+"
                 replacement=""/>
-        <!-- Loại bỏ empty strings sau PatternReplaceFilter: thay bằng giá trị 1 ký tự -->
+        <!-- Loại bỏ dấu câu ở cuối cụm từ -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="[,.;:!?_-]+$"
+                replacement=""/>
+        <!-- Loại bỏ các cụm từ có dấu câu ở giữa (bất kỳ đâu) - CHỈ dấu câu, KHÔNG bao gồm khoảng trắng -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern=".*[,.;:!?_-].*"
+                replacement=""/>
+        <!-- Loại bỏ các cụm từ quá ngắn (ít hơn 3 ký tự) hoặc quá dài -->
+        <filter class="solr.LengthFilterFactory" min="2" max="50"/>
+        <!-- Loại bỏ các cụm từ chỉ chứa dấu câu -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^[,.;:!?_-]+$"
+                replacement=""/>
+        <!-- Loại bỏ khoảng trắng ở đầu token (cuối cùng) -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="^\s+"
+                replacement=""/>
+        <!-- Loại bỏ khoảng trắng ở cuối token (cuối cùng) -->
+        <filter class="solr.PatternReplaceFilterFactory"
+                pattern="\s+$"
+                replacement=""/>
+        <!-- Loại bỏ empty strings -->
         <filter class="solr.PatternReplaceFilterFactory"
                 pattern="^$"
-                replacement="X"/>
-        <!-- LengthFilter sẽ loại bỏ token "x" (1 ký tự) -->
-        <filter class="solr.LengthFilterFactory" min="2" max="50"/>
+                replacement=""/>
       </analyzer>
     </fieldType>
     <fieldType name="random" class="solr.RandomSortField" indexed="true" />
