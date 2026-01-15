@@ -37,6 +37,7 @@
   -->
   <luceneMatchVersion>8.5.2</luceneMatchVersion>
 
+  <!-- Load JAR files from lib directory in configset -->
   <lib dir="/opt/solr/server/solr/configsets/wordcloud_config/lib" />
 
   <!-- <lib/> directives can be used to instruct Solr to load any Jars

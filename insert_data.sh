@@ -1,18 +1,39 @@
 #!/bin/bash
 
-# Script để insert data vào cả 2 Solr containers và so sánh thời gian indexing
+# Script để insert data vào các Solr containers và so sánh thời gian indexing
+# Hỗ trợ: Solr 8.5.2 với VnCoreNLP 1.1.1, Solr 8.5.2 với VnCoreNLP 1.2, và Solr 9.11
+#
+# Cách sử dụng:
+#   ./insert_data.sh [target] [data_file]
+#
+# Tham số:
+#   target: "all" (mặc định - insert vào tất cả), "8_1_1", "8_1_2", "9", hoặc "8" (cả 2 Solr 8)
+#   data_file: đường dẫn đến file JSON (mặc định: exported_data.json)
+#
+# Ví dụ:
+#   ./insert_data.sh                                    # Insert vào tất cả containers
+#   ./insert_data.sh all exported_data.json            # Insert vào tất cả với file cụ thể
+#   ./insert_data.sh 8_1_1                            # Chỉ insert vào Solr 8.5.2 (VnCoreNLP 1.1.1)
+#   ./insert_data.sh 8                                 # Insert vào cả 2 Solr 8.5.2
+#   ./insert_data.sh 9 exported_data_no_version.json   # Chỉ insert vào Solr 9.11
 
-COLLECTION_NAME_8="${1:-topic_tanvd}"
-COLLECTION_NAME_9="${2:-topic_tanvd_9}"
-DATA_FILE="${3:-exported_data.json}"
+TARGET="${1:-all}"
+DATA_FILE="${2:-exported_data.json}"
 
-# Cấu hình Solr 8.5.2
-CONTAINER_8="solr_8_5_2"
-SOLR_URL_8="http://localhost:8983/solr"
+# Cấu hình Solr 8.5.2 với VnCoreNLP 1.1.1
+CONTAINER_8_1_1="solr_8_5_2_1_1"
+SOLR_URL_8_1_1="http://localhost:8983/solr"
+COLLECTION_NAME_8_1_1="topic_tanvd"
+
+# Cấu hình Solr 8.5.2 với VnCoreNLP 1.2
+CONTAINER_8_1_2="solr_8_5_2_1_2"
+SOLR_URL_8_1_2="http://localhost:8984/solr"
+COLLECTION_NAME_8_1_2="topic_tanvd"
 
 # Cấu hình Solr 9.11
 CONTAINER_9="solr_9_11"
-SOLR_URL_9="http://localhost:8984/solr"
+SOLR_URL_9="http://localhost:8985/solr"
+COLLECTION_NAME_9="topic_tanvd_9"
 
 # Màu sắc
 GREEN='\033[0;32m'
@@ -24,9 +45,11 @@ MAGENTA='\033[0;35m'
 NC='\033[0m'
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "${BLUE}📥 Insert Data vào cả 2 Solr Containers${NC}"
+echo -e "${BLUE}📥 Insert Data vào Solr Containers${NC}"
 echo -e "${BLUE}⏱️  So sánh thời gian indexing${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo -e "${CYAN}Target: ${TARGET}${NC}"
 echo ""
 
 # Hàm insert data vào một Solr instance và đo thời gian
@@ -155,75 +178,151 @@ echo -e "${GREEN}   Kích thước: $file_size${NC}"
 echo -e "${GREEN}   Số records (ước tính): $record_count${NC}"
 echo ""
 
-# Insert vào Solr 8.5.2
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}🚀 Bắt đầu insert vào Solr 8.5.2${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
+# Khởi tạo biến kết quả
+TIME_8_1_1=""
+TIME_8_1_2=""
+TIME_9=""
+RESULT_8_1_1=0
+RESULT_8_1_2=0
+RESULT_9=0
 
-TIME_8=$(insert_data_to_solr "${CONTAINER_8}" "${SOLR_URL_8}" "${COLLECTION_NAME_8}" "Solr 8.5.2" "${DATA_FILE}")
-RESULT_8=$?
+# Insert vào Solr 8.5.2 với VnCoreNLP 1.1.1
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_1" ] || [ "$TARGET" = "8" ]; then
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}🚀 Bắt đầu insert vào Solr 8.5.2 (VnCoreNLP 1.1.1)${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    TIME_8_1_1=$(insert_data_to_solr "${CONTAINER_8_1_1}" "${SOLR_URL_8_1_1}" "${COLLECTION_NAME_8_1_1}" "Solr 8.5.2 (VnCoreNLP 1.1.1)" "${DATA_FILE}")
+    RESULT_8_1_1=$?
+    echo ""
+    echo ""
+fi
 
-echo ""
-echo ""
+# Insert vào Solr 8.5.2 với VnCoreNLP 1.2
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_2" ] || [ "$TARGET" = "8" ]; then
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}🚀 Bắt đầu insert vào Solr 8.5.2 (VnCoreNLP 1.2)${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    TIME_8_1_2=$(insert_data_to_solr "${CONTAINER_8_1_2}" "${SOLR_URL_8_1_2}" "${COLLECTION_NAME_8_1_2}" "Solr 8.5.2 (VnCoreNLP 1.2)" "${DATA_FILE}")
+    RESULT_8_1_2=$?
+    echo ""
+    echo ""
+fi
 
 # Insert vào Solr 9.11
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}🚀 Bắt đầu insert vào Solr 9.11${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "9" ]; then
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BLUE}🚀 Bắt đầu insert vào Solr 9.11${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    TIME_9=$(insert_data_to_solr "${CONTAINER_9}" "${SOLR_URL_9}" "${COLLECTION_NAME_9}" "Solr 9.11" "${DATA_FILE}")
+    RESULT_9=$?
+    echo ""
+    echo ""
+fi
 
-TIME_9=$(insert_data_to_solr "${CONTAINER_9}" "${SOLR_URL_9}" "${COLLECTION_NAME_9}" "Solr 9.11" "${DATA_FILE}")
-RESULT_9=$?
-
-echo ""
+# Hiển thị kết quả
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo -e "${CYAN}📊 KẾT QUẢ SO SÁNH THỜI GIAN INDEXING${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-if [ $RESULT_8 -eq 0 ] && [ $RESULT_9 -eq 0 ]; then
-    echo -e "${GREEN}✅ Hoàn thành insert data cho cả 2 Solr containers!${NC}"
+# Kiểm tra có thành công không
+SUCCESS_COUNT=0
+TOTAL_COUNT=0
+
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_1" ] || [ "$TARGET" = "8" ]; then
+    TOTAL_COUNT=$((TOTAL_COUNT + 1))
+    if [ $RESULT_8_1_1 -eq 0 ]; then
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    fi
+fi
+
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_2" ] || [ "$TARGET" = "8" ]; then
+    TOTAL_COUNT=$((TOTAL_COUNT + 1))
+    if [ $RESULT_8_1_2 -eq 0 ]; then
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    fi
+fi
+
+if [ "$TARGET" = "all" ] || [ "$TARGET" = "9" ]; then
+    TOTAL_COUNT=$((TOTAL_COUNT + 1))
+    if [ $RESULT_9 -eq 0 ]; then
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    fi
+fi
+
+if [ $SUCCESS_COUNT -eq $TOTAL_COUNT ] && [ $TOTAL_COUNT -gt 0 ]; then
+    echo -e "${GREEN}✅ Hoàn thành insert data cho ${SUCCESS_COUNT}/${TOTAL_COUNT} Solr container(s)!${NC}"
     echo ""
     echo -e "${CYAN}⏱️  Thời gian indexing:${NC}"
     
-    if [ ! -z "$TIME_8" ] && [ ! -z "$TIME_9" ]; then
-        TIME_8_FORMATTED=$(printf "%.2f" $TIME_8)
+    # Hiển thị thời gian cho từng container
+    if [ ! -z "$TIME_8_1_1" ]; then
+        TIME_8_1_1_FORMATTED=$(printf "%.2f" $TIME_8_1_1)
+        echo -e "   ${BLUE}Solr 8.5.2 (VnCoreNLP 1.1.1):${NC} ${TIME_8_1_1_FORMATTED} giây"
+    fi
+    
+    if [ ! -z "$TIME_8_1_2" ]; then
+        TIME_8_1_2_FORMATTED=$(printf "%.2f" $TIME_8_1_2)
+        echo -e "   ${BLUE}Solr 8.5.2 (VnCoreNLP 1.2):${NC} ${TIME_8_1_2_FORMATTED} giây"
+    fi
+    
+    if [ ! -z "$TIME_9" ]; then
         TIME_9_FORMATTED=$(printf "%.2f" $TIME_9)
-        
-        echo -e "   ${BLUE}Solr 8.5.2:${NC} ${TIME_8_FORMATTED} giây"
         echo -e "   ${BLUE}Solr 9.11:${NC} ${TIME_9_FORMATTED} giây"
-        echo ""
-        
-        # So sánh
-        DIFF=$(echo "$TIME_8 - $TIME_9" | bc)
-        DIFF_ABS=$(echo "if ($DIFF < 0) -($DIFF) else $DIFF" | bc)
-        DIFF_PERCENT=$(echo "scale=2; ($DIFF_ABS / $TIME_8) * 100" | bc)
-        
-        if (( $(echo "$TIME_8 > $TIME_9" | bc -l) )); then
-            echo -e "${GREEN}   🏆 Solr 9.11 nhanh hơn ${DIFF_ABS} giây (${DIFF_PERCENT}% nhanh hơn)${NC}"
-        elif (( $(echo "$TIME_9 > $TIME_8" | bc -l) )); then
-            echo -e "${GREEN}   🏆 Solr 8.5.2 nhanh hơn ${DIFF_ABS} giây (${DIFF_PERCENT}% nhanh hơn)${NC}"
-        else
-            echo -e "${YELLOW}   ⚖️  Thời gian indexing gần như bằng nhau${NC}"
-        fi
-    else
-        echo -e "${YELLOW}   ⚠️  Không thể so sánh thời gian (thiếu dữ liệu)${NC}"
     fi
     
     echo ""
+    
+    # So sánh nếu có đủ 2 kết quả
+    if [ ! -z "$TIME_8_1_1" ] && [ ! -z "$TIME_8_1_2" ]; then
+        DIFF=$(echo "$TIME_8_1_1 - $TIME_8_1_2" | bc)
+        DIFF_ABS=$(echo "if ($DIFF < 0) -($DIFF) else $DIFF" | bc)
+        DIFF_PERCENT=$(echo "scale=2; ($DIFF_ABS / $TIME_8_1_1) * 100" | bc)
+        
+        if (( $(echo "$TIME_8_1_1 > $TIME_8_1_2" | bc -l) )); then
+            echo -e "${GREEN}   🏆 VnCoreNLP 1.2 nhanh hơn 1.1.1: ${DIFF_ABS} giây (${DIFF_PERCENT}% nhanh hơn)${NC}"
+        elif (( $(echo "$TIME_8_1_2 > $TIME_8_1_1" | bc -l) )); then
+            echo -e "${GREEN}   🏆 VnCoreNLP 1.1.1 nhanh hơn 1.2: ${DIFF_ABS} giây (${DIFF_PERCENT}% nhanh hơn)${NC}"
+        else
+            echo -e "${YELLOW}   ⚖️  Thời gian indexing giữa VnCoreNLP 1.1.1 và 1.2 gần như bằng nhau${NC}"
+        fi
+        echo ""
+    fi
+    
     echo -e "${CYAN}📝 URLs:${NC}"
-    echo -e "   ${GREEN}Solr 8.5.2:${NC} ${SOLR_URL_8}/${COLLECTION_NAME_8}"
-    echo -e "   ${GREEN}Solr 9.11:${NC} ${SOLR_URL_9}/${COLLECTION_NAME_9}"
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_1" ] || [ "$TARGET" = "8" ]; then
+        echo -e "   ${GREEN}Solr 8.5.2 (VnCoreNLP 1.1.1):${NC} ${SOLR_URL_8_1_1}/${COLLECTION_NAME_8_1_1}"
+    fi
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_2" ] || [ "$TARGET" = "8" ]; then
+        echo -e "   ${GREEN}Solr 8.5.2 (VnCoreNLP 1.2):${NC} ${SOLR_URL_8_1_2}/${COLLECTION_NAME_8_1_2}"
+    fi
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "9" ]; then
+        echo -e "   ${GREEN}Solr 9.11:${NC} ${SOLR_URL_9}/${COLLECTION_NAME_9}"
+    fi
     echo ""
     exit 0
 else
     echo -e "${RED}❌ Có lỗi xảy ra khi insert data${NC}"
-    if [ $RESULT_8 -ne 0 ]; then
-        echo -e "${RED}   - Solr 8.5.2: FAILED${NC}"
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_1" ] || [ "$TARGET" = "8" ]; then
+        if [ $RESULT_8_1_1 -ne 0 ]; then
+            echo -e "${RED}   - Solr 8.5.2 (VnCoreNLP 1.1.1): FAILED${NC}"
+        fi
     fi
-    if [ $RESULT_9 -ne 0 ]; then
-        echo -e "${RED}   - Solr 9.11: FAILED${NC}"
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "8_1_2" ] || [ "$TARGET" = "8" ]; then
+        if [ $RESULT_8_1_2 -ne 0 ]; then
+            echo -e "${RED}   - Solr 8.5.2 (VnCoreNLP 1.2): FAILED${NC}"
+        fi
+    fi
+    if [ "$TARGET" = "all" ] || [ "$TARGET" = "9" ]; then
+        if [ $RESULT_9 -ne 0 ]; then
+            echo -e "${RED}   - Solr 9.11: FAILED${NC}"
+        fi
     fi
     echo ""
     exit 1

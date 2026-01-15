@@ -1,6 +1,9 @@
 solr-vn-tokenizer
+VnCoreNLP
 lib
 configsets/
 topic_10236681/
 *.json
 *.jsonl
+*.xlsx
+*.txt

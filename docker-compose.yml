@@ -1,16 +1,35 @@
 services:
-  # Solr 8.5.2 với config từ wordcloud_config_test
-  solr_8:
+  solr_8_5_2_1_1:
     image: solr:8.5.2
-    container_name: solr_8_5_2
+    container_name: solr_8_5_2_1_1
     ports:
       - "8983:8983"
     volumes:
       # Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
-      - solr_data_8:/var/solr
+      - solr_data_8_1_1:/var/solr
 
       # Mount folder config vào thư mục ConfigSets
-      - ./wordcloud_config_test:/opt/solr/server/solr/configsets/wordcloud_config
+      - ./wordcloud_config_solr_8.5.2_nlp_1.1.1:/opt/solr/server/solr/configsets/wordcloud_config
+
+    # Lệnh tạo core tự động khi khởi động
+    command: solr-precreate topic_tanvd /opt/solr/server/solr/configsets/wordcloud_config
+    
+    restart: always
+    networks:
+      - solr_network
+
+  # Solr 8.5.2 với config từ wordcloud_config_test
+  solr_8_5_2_1_2:
+    image: solr:8.5.2
+    container_name: solr_8_5_2_1_2
+    ports:
+      - "8984:8983"
+    volumes:
+      # Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
+      - solr_data_8_1_2:/var/solr
+
+      # Mount folder config vào thư mục ConfigSets
+      - ./wordcloud_config_solr_8.5.2_nlp_1.2:/opt/solr/server/solr/configsets/wordcloud_config
 
     # Lệnh tạo core tự động khi khởi động
     command: solr-precreate topic_tanvd /opt/solr/server/solr/configsets/wordcloud_config
@@ -24,7 +43,7 @@ services:
     image: solr:latest
     container_name: solr_9_11
     ports:
-      - "8984:8983"
+      - "8985:8983"
     volumes:
       # Mount dữ liệu (Index) ra volume riêng để không mất khi xóa container
       - solr_data_9:/var/solr
@@ -42,7 +61,8 @@ services:
       - solr_network
 
 volumes:
-  solr_data_8:
+  solr_data_8_1_1:
+  solr_data_8_1_2:
   solr_data_9:
 
 networks:
