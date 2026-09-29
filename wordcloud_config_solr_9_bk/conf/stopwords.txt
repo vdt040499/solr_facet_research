@@ -1,4 +1,0 @@
-ynm_story
-ynm_name
-ynm_des
-ynm_caption

@@ -3,7 +3,10 @@ VnCoreNLP
 lib
 configsets/
 topic_10236681/
+data/
 *.json
 *.jsonl
 *.xlsx
 *.txt
+*.log
+__pycache__/
