@@ -175,15 +175,16 @@
     <fieldType name="text_cloud_vn" class="solr.TextField" positionIncrementGap="100">
       <analyzer type="index">
         <charFilter class="solr.HTMLStripCharFilterFactory"/> 
-        <tokenizer class="org.apache.lucene.analysis.vi.VietnameseTokenizerFactory"/>
+        <tokenizer class="org.apache.lucene.analysis.vi.VietnameseTokenizerFactory" annotators="wseg,pos"/>
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="org.apache.lucene.analysis.vi.VietnameseStopFilterFactory"/>
         <filter class="solr.PatternReplaceFilterFactory"
                 pattern="^[\p{P}\p{S}]+$"
                 replacement=""/>
-        <filter class="solr.PatternReplaceFilterFactory"
-                pattern="^\S+$"
-                replacement=""/>
+        <!-- Bỏ từ đơn không phải tên riêng (type SINGLE); giữ WORD (>= 2 tiếng) và PROPER (từ đơn có nhãn Np) -->
+        <filter class="solr.TypeTokenFilterFactory"
+                types="skip_token_types.txt"
+                useWhitelist="false"/>
         <filter class="solr.LengthFilterFactory" min="1" max="200"/>
       </analyzer>
       <analyzer type="query">

@@ -19,9 +19,9 @@ from urllib.parse import urlencode
 
 # Cấu hình
 SOLR_URL = "http://solrtopic-testing.ynm.local/solr"
-COLLECTION_NAME = "topic_10236681"
-SOLR_USERNAME = "app"
-SOLR_PASSWORD = "iamapp"
+COLLECTION_NAME = "topic_140975"
+SOLR_USERNAME = "social_suite_app_solr"
+SOLR_PASSWORD = "BV9vTxwrQN5a849s"
 ROWS_PER_REQUEST = 500  # Số records mỗi request
 WAIT_SECONDS = 10  # Đợi 60 giây (1 phút) giữa các request
 OUTPUT_FILE = "exported_data.jsonl"  # JSONL format (một JSON object mỗi dòng)

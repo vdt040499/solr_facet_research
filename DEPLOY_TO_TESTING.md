@@ -63,43 +63,79 @@
 ## File cần mang theo
 
 
-| File                                                               | Nguồn                                                                                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| `solr-vn-analyzer-1.0.jar`                                         | Build từ `vncore_nlp_research/` (`mvn clean package -Dmaven.test.skip=true`) — không dùng `solr-vn-tokenizer/` (còn bug offset) |
-| `VnCoreNLP-1.2.jar`                                                | `VnCoreNLP/VnCoreNLP-1.2.jar`                                                                                                   |
-| `commons-io-2.7.jar`                                               | `wordcloud_config_solr/lib/`                                                                                                    |
-| `jaxb-api-2.3.0.jar`, `jaxb-core-2.3.0.jar`, `jaxb-impl-2.3.0.jar` | `wordcloud_config_solr/lib/`                                                                                                    |
-| `activation-1.1.1.jar`                                             | `wordcloud_config_solr/lib/`                                                                                                    |
-| `models/wordsegmenter/vi-vocab`                                    | `wordcloud_config_solr/lib/models/wordsegmenter/` — đặt cùng thư mục với `VnCoreNLP-1.2.jar` trên mỗi node                      |
-| `models/wordsegmenter/wordsegmenter.rdr`                           | `wordcloud_config_solr/lib/models/wordsegmenter/`                                                                               |
+| File                                      | Nguồn                                                                                                                            |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `solr-vn-analyzer-1.0.jar`                 | Build từ `vncore_nlp_research/` (`mvn clean package -Dmaven.test.skip=true`) — không dùng `solr-vn-tokenizer/` (còn bug offset)  |
+| `VnCoreNLP-1.2.jar`                        | `VnCoreNLP/VnCoreNLP-1.2.jar`                                                                                                    |
+| `models/wordsegmenter/vi-vocab`            | `wordcloud_config_solr/lib/models/wordsegmenter/` — đặt cùng thư mục với `VnCoreNLP-1.2.jar` trên mỗi node                       |
+| `models/wordsegmenter/wordsegmenter.rdr`   | `wordcloud_config_solr/lib/models/wordsegmenter/`                                                                                |
+
+`commons-io`, `jaxb-api/core/impl`, `activation` **không cần mang theo** — đã test trên 1 container Solr 9.10.1
+riêng biệt (không đụng data thật), chỉ dùng 2 jar + `models/` ở trên: core load được, phân tích + insert 50
+document thật cho kết quả đúng, không lỗi (30/09/2026).
+
+**Chỉ thêm file mới, không xoá gì trên node testing.** Đặt 2 jar + `models/` vào 1 thư mục riêng
+(`sharedLib` mới hoặc thư mục Package Manager cấp), không động vào bất kỳ jar/thư viện nào Solr đang có sẵn.
 
 
 
 
-## Schema — merge vào `managed-schema.xml` của configset clone
+## Schema — thêm bằng Schema API, không sửa file XML tay
 
-```xml
-<fieldType name="text_cloud_vn" class="solr.TextField" positionIncrementGap="100">
-  <analyzer type="index">
-    <charFilter class="solr.HTMLStripCharFilterFactory"/>
-    <tokenizer class="org.apache.lucene.analysis.vi.VietnameseTokenizerFactory"/>
-    <filter class="solr.LowerCaseFilterFactory"/>
-    <filter class="org.apache.lucene.analysis.vi.VietnameseStopFilterFactory"/>
-    <filter class="solr.PatternReplaceFilterFactory" pattern="^[\p{P}\p{S}]+$" replacement=""/>
-    <filter class="solr.PatternReplaceFilterFactory" pattern="^\S+$" replacement=""/>
-    <filter class="solr.LengthFilterFactory" min="1" max="200"/>
-  </analyzer>
-  <analyzer type="query">
-    <tokenizer class="org.apache.lucene.analysis.vi.VietnameseTokenizerFactory"/>
-    <filter class="solr.LowerCaseFilterFactory"/>
-  </analyzer>
-</fieldType>
+**Không tải/chèn/đẩy lại `managed-schema.xml`.** Dùng Schema API để Solr tự thêm đúng 3 phần dưới đây vào
+bản đang có — không có rủi ro ghi đè mất field/fieldType khác của `topic_v3` (`search_text`, `mention_tags`,
+`categories`...).
 
-<field name="search_text_cloud" type="text_cloud_vn" indexed="true" stored="false" multiValued="true"/>
-<copyField source="search_text" dest="search_text_cloud"/>
+Schema API hoạt động ở cấp **collection** đang chạy, không gọi thẳng vào configset — cần 1 collection tạm
+dùng configset clone để gọi API lên (xem bước 2-4 ở "Trình tự triển khai").
+
+```json
+{
+  "add-field-type": {
+    "name": "text_cloud_vn",
+    "class": "solr.TextField",
+    "positionIncrementGap": "100",
+    "indexAnalyzer": {
+      "charFilters": [
+        { "class": "solr.HTMLStripCharFilterFactory" }
+      ],
+      "tokenizer": { "class": "org.apache.lucene.analysis.vi.VietnameseTokenizerFactory" },
+      "filters": [
+        { "class": "solr.LowerCaseFilterFactory" },
+        { "class": "org.apache.lucene.analysis.vi.VietnameseStopFilterFactory" },
+        { "class": "solr.PatternReplaceFilterFactory", "pattern": "^[\\p{P}\\p{S}]+$", "replacement": "" },
+        { "class": "solr.PatternReplaceFilterFactory", "pattern": "^\\S+$", "replacement": "" },
+        { "class": "solr.LengthFilterFactory", "min": 1, "max": 200 }
+      ]
+    },
+    "queryAnalyzer": {
+      "tokenizer": { "class": "org.apache.lucene.analysis.vi.VietnameseTokenizerFactory" },
+      "filters": [
+        { "class": "solr.LowerCaseFilterFactory" }
+      ]
+    }
+  },
+  "add-field": {
+    "name": "search_text_cloud",
+    "type": "text_cloud_vn",
+    "indexed": true,
+    "stored": false,
+    "multiValued": true
+  },
+  "add-copy-field": {
+    "source": "search_text",
+    "dest": "search_text_cloud"
+  }
+}
 ```
 
-Bản đầy đủ: `[wordcloud_config_solr/conf/managed-schema.xml](wordcloud_config_solr/conf/managed-schema.xml)`.
+```bash
+curl -X POST -H 'Content-Type: application/json' --data-binary @schema-add.json \
+  "http://solrtopic01.ynm.local:8985/solr/<collection_tạm>/schema"
+```
+
+Đối chiếu (không copy) với bản XML tương đương đang chạy ở local:
+[wordcloud_config_solr/conf/managed-schema.xml](wordcloud_config_solr/conf/managed-schema.xml).
 
 ## Trình tự triển khai
 
@@ -110,13 +146,15 @@ Nguồn bị chuyển **read-only** trong suốt lúc reindex (mục 9-10 ở tr
 | #   | Bước                                                            | Lệnh                                                                                                                                                                                 |
 | --- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1   | Clone configset                                                 | `bin/solr zk cp -r zk:/configs/topic_v3 zk:/configs/topic_v3_wordcloud_test -z <zkHost>` hoặc `CONFIGSETS?action=CREATE&name=topic_v3_wordcloud_test&baseConfigSet=topic_v3`         |
-| 2   | Merge fieldType vào configset clone                             | Sửa `managed-schema.xml` của `topic_v3_wordcloud_test`, không đụng `topic_v3` gốc                                                                                                    |
-| 3   | Deploy jar + `models/` lên cả 3 node, rolling-restart 1 lần     | Theo cách A/B đã chọn ở mục "Điểm chặn kỹ thuật" #1                                                                                                                                  |
-| 4   | Reindex topic nguồn (đã chọn ở mục 10) sang collection test mới | `admin/collections?action=REINDEXCOLLECTION&name=<topic_id>&target=wordcloud_test_1&configName=topic_v3_wordcloud_test&async=reindex1`                                               |
-| 5   | Theo dõi tới khi xong                                           | `action=REQUESTSTATUS&requestid=reindex1`                                                                                                                                            |
-| 6   | Kiểm tra facet + latency trên `wordcloud_test_1`                | Đối chiếu NFR-05. Topic nguồn tự hết read-only khi bước 4 xong                                                                                                                       |
-| 7a  | Nếu ổn — xoá `wordcloud_test_1` + configset test                | Không đụng gì tới topic nguồn                                                                                                                                                        |
-| 7b  | Áp lên chính topic đó                                           | `REINDEXCOLLECTION&name=<topic_id>&target=<topic_id>&configName=topic_v3_wordcloud_test&async=reindex2` — Solr tự tạo bản mới + alias trỏ ngược tên cũ, phía client không cần đổi gì |
+| 2   | Tạo collection tạm dùng configset clone — chỉ để gọi Schema API | `CREATE?name=wordcloud_schema_setup&numShards=1&replicationFactor=1&collection.configName=topic_v3_wordcloud_test`                                                                  |
+| 3   | Gọi Schema API — thêm fieldType/field/copyField                | POST JSON ở mục "Schema" lên `/solr/wordcloud_schema_setup/schema`                                                                                                                    |
+| 4   | Xoá collection tạm — configset đã lưu thay đổi trong ZK         | `action=DELETE&name=wordcloud_schema_setup`                                                                                                                                          |
+| 5   | Deploy jar + `models/` lên cả 3 node, rolling-restart 1 lần     | Theo cách A/B đã chọn ở mục "Điểm chặn kỹ thuật" #1                                                                                                                                  |
+| 6   | Reindex topic nguồn (đã chọn ở mục 10) sang collection test mới | `admin/collections?action=REINDEXCOLLECTION&name=<topic_id>&target=wordcloud_test_1&configName=topic_v3_wordcloud_test&async=reindex1`                                               |
+| 7   | Theo dõi tới khi xong                                           | `action=REQUESTSTATUS&requestid=reindex1`                                                                                                                                            |
+| 8   | Kiểm tra facet + latency trên `wordcloud_test_1`                | Đối chiếu NFR-05. Topic nguồn tự hết read-only khi bước 6 xong                                                                                                                       |
+| 9a  | Nếu ổn — xoá `wordcloud_test_1` + configset test                | Không đụng gì tới topic nguồn                                                                                                                                                        |
+| 9b  | Áp lên chính topic đó                                           | `REINDEXCOLLECTION&name=<topic_id>&target=<topic_id>&configName=topic_v3_wordcloud_test&async=reindex2` — Solr tự tạo bản mới + alias trỏ ngược tên cũ, phía client không cần đổi gì |
 
 
 

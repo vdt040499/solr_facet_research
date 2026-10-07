@@ -5,6 +5,12 @@
 # và muốn container đang chạy nạp lại config đó (mount configset không tự
 # reload — phải xóa và tạo lại core).
 #
+# CHỈ DÙNG CHO LOCAL (standalone, 1 core mount file trực tiếp từ host). Cách
+# "sửa file rồi xóa/tạo lại core" này KHÔNG áp dụng cho Solr testing
+# (SolrCloud, config lưu trong ZooKeeper, 81/82 collection dùng chung 1
+# configset). Trên testing dùng Schema API để chỉ THÊM field/fieldType, xem
+# DEPLOY_TO_TESTING.md.
+#
 # LƯU Ý QUAN TRỌNG: core này dùng fieldType nạp từ jar ngoài
 # (org.apache.lucene.analysis.vi.VietnameseAnalyzer, xem solr-vn-tokenizer/).
 # Solr 9 có bug: gọi CoreAdmin API "action=CREATE" để tạo core mới trong lúc

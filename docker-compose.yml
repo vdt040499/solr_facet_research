@@ -8,6 +8,9 @@ services:
       - solr_data_9:/var/solr
       - ./wordcloud_config_solr:/opt/solr/server/solr/configsets/wordcloud_config
     command: solr-precreate topic_10236707 /opt/solr/server/solr/configsets/wordcloud_config
+    environment:
+      # Mặc định Solr chỉ 512MB heap, không đủ khi insert batch lớn + POS tagger (OutOfMemoryError)
+      - SOLR_HEAP=${SOLR_HEAP:-2g}
     restart: always
     networks:
       - solr_network

@@ -17,7 +17,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-DATA_FILE_INPUT="${1:-${REPO_ROOT}/exported_data_10236707.json}"
+DATA_FILE_INPUT="${1:-${REPO_ROOT}/exported_data.json}"
 
 # Xử lý tên file (thêm .json nếu cần)
 if [ -f "$DATA_FILE_INPUT" ]; then
@@ -31,7 +31,7 @@ fi
 # Cấu hình Solr 9
 CONTAINER_NAME="solr_9"
 SOLR_URL="http://localhost:8983/solr"
-COLLECTION_NAME="topic_10236707"
+COLLECTION_NAME="topic_140975"
 
 # Màu sắc
 GREEN='\033[0;32m'
@@ -126,7 +126,7 @@ echo -e "${MAGENTA}⏱️  Bắt đầu insert data...${NC}"
 START_TIME=$(date +%s.%N)
 
 if command -v python &> /dev/null; then
-    python "${SCRIPT_DIR}/bulk_insert.py" "$DATA_FILE" "$SOLR_URL" "$COLLECTION_NAME" 2000 "$record_count"
+    python "${SCRIPT_DIR}/bulk_insert.py" "$DATA_FILE" "$SOLR_URL" "$COLLECTION_NAME" 100 "$record_count"
     EXIT_CODE=$?
 else
     echo -e "${YELLOW}⚠️  Python không có sẵn, sử dụng curl (không có progress bar)...${NC}"
