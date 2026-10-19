@@ -54,6 +54,8 @@ Script sẽ xoá và tạo lại core để nạp config mới — **mất data 
 ./03_insert/insert_data.sh                                    # dùng exported_data_10236707.json mặc định
 ./03_insert/insert_data.sh exported_data_10236707.json         # chỉ định file data
 
+
+# Clear collections
 curl -X POST "http://localhost:8983/solr/topic_140975/update?commit=true" \
   -H 'Content-Type: application/json' \
   -d '{"delete": {"query": "*:*"}}'
